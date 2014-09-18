@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Malariapp</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Malariapp">
+  <meta name="author" content="Kyle Jarrod Mclean">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/custom.css"></link>
+<link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Malariapp</h1>
+    <h2>a web application to visualize gene expression in the malaria parasite</h2>
+    <p>Kyle Jarrod Mclean<br/></p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>Malariapp</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Malaria is caused by the parastitic protozoan Plasmodium falciparum and infects more than 300 million people and kills upwards of 1 million people each year. Most of these deaths occur in children under 5 years old.</p>
+
+<p>Studying the genomics of the parasite can lead to the identification of novel drug targets for the development of future therepeutic interventions.</p>
+
+<p>In 2003, <a href="http://www.plosbiology.org/article/info%3Adoi%2F10.1371%2Fjournal.pbio.0000005">Bozdech et al.</a> published a high resolution microarray analysis of all 6000 of the parasite&#39;s genes at every hour of its 48h life cycle within human red blood cells.</p>
+
+<p>The Malariapp allows the user to visualize the expression profile of any two of the parasite&#39;s genes. This simplifies the complex data set, allowing users to easily compare and contrast expression profiles to facilitate hypothesis generation. </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-2" style="background:;">
+  <hgroup>
+    <h2>Data Munging</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>The original dataset provided by <a href="http://www.plosbiology.org/article/info%3Adoi%2F10.1371%2Fjournal.pbio.0000005">Bozdech et al. 2003</a> consisted of a dataframe of ~6600 rows (parasite genes) and ~50 columns (gene names, gene description, and 48 one-hour interval time points. The entries of each cell of the dataframe contained the normalized gene-expression values derived from the microarray processing. Here, the data was cleaned and tidied into a &quot;long&quot; dataframe containing only three columns: gene name, time point, and normalized expression value. 316 296 corresponds to ~6600 genes by 48 time points.</p>
+
+<pre><code class="r">dataset
+</code></pre>
+
+<pre><code>## Source: local data frame [316,296 x 4]
+## 
+##     X    probeID timepoint value
+## 1   1   a10325_1         1    NA
+## 2   2  a10325_16         1    NA
+## 3   3  a10325_20         1 1.106
+## 4   4  a10325_26         1 0.827
+## 5   5  a10325_29         1 2.676
+## 6   6  a10325_30         1 2.896
+## 7   7 a10325_30h         1    NA
+## 8   8 a10325_30i         1 2.999
+## 9   9 a10325_30j         1 2.392
+## 10 10  a10325_32         1 2.392
+## .. ..        ...       ...   ...
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h2>The Malariapp plotting function</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>The Malariapp web-application calls a custom plotting function based on the ggplot2 R-package.</p>
+
+<pre><code class="r">make_plot &lt;- function(probe1, probe2, confint){
+    df_1 &lt;- dataset[dataset$probeID == probe1, ] %&lt;&gt;% data.frame
+    df_2 &lt;- dataset[dataset$probeID == probe2, ] %&lt;&gt;% data.frame
+    subdata &lt;- rbind(df_1, df_2)
+    ggplot(subdata, aes(x = timepoint,  y = value, colour = probeID)) + 
+        geom_smooth(method = &quot;loess&quot;, level = confint) + 
+        ylab(&quot;normalized expression level&quot;) + 
+        xlab(&quot;hours post-invasion&quot;)   
+}
+</code></pre>
+
+<p>The user selects any two of the ~6600 possible parasite genes using the selection widgets. These selections are used to retrieve the corresponding 48 data rows for each gene from the dataset. The data for both genes are combined into a new dataframe which is fed into a ggplot2 plotting function which calculates a loess smoothed curve of the expression profile of each gene across the 48h parasite lifecycle. The user may also use the input slider to specify a confidence interval for the loess smoother to gain an appreciation in the uncertainty of each gene&#39;s profile. </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h2>Sample Plot</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>For example, selecting the genes &quot;j22_1&quot; and &quot;opfblob0119&quot; with a loess smoothing confidence interval of 95%, calls the following to generate the plot below:</p>
+
+<pre><code class="r">make_plot(&quot;j22_1&quot;, &quot;opfblob0119&quot;, 0.95)
+</code></pre>
+
+<p><img src="assets/fig/unnamed-chunk-4.png" title="plot of chunk unnamed-chunk-4" alt="plot of chunk unnamed-chunk-4" style="display: block; margin: auto;" /></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Malariapp'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Data Munging'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='The Malariapp plotting function'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='Sample Plot'>
+         4
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
